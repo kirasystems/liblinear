@@ -42,6 +42,7 @@ install:
 	cp $${LIBFILE} /usr/local/lib
 	cp predict /usr/local/bin
 	cp train /usr/local/bin
+	cp linear.h /usr/local/include
 
 clean:
 	make -C blas clean
