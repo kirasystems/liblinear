@@ -2944,6 +2944,120 @@ struct model *load_model(const char *model_file_name)
 	return model_;
 }
 
+struct model *load_model_string(const char *model_data)
+{
+	int bytes_read;
+	int i;
+	int nr_feature;
+	int n;
+	int nr_class;
+	double bias;
+	model *model_ = Malloc(model,1);
+	parameter& param = model_->param;
+	// parameters for training only won't be assigned, but arrays are assigned as NULL for safety
+	param.nr_weight = 0;
+	param.weight_label = NULL;
+	param.weight = NULL;	
+	param.init_sol = NULL;
+
+	model_->label = NULL;
+
+	char *old_locale = setlocale(LC_ALL, NULL);
+	if (old_locale)
+	{
+		old_locale = strdup(old_locale);
+	}
+	setlocale(LC_ALL, "C");
+
+	char cmd[81];
+	while(1)
+	{
+		sscanf(model_data,"%80s%n",cmd,&bytes_read);
+		model_data += bytes_read;
+		if(strcmp(cmd,"solver_type")==0)
+		{
+			sscanf(model_data,"%80s%n",cmd,&bytes_read);
+			model_data += bytes_read;
+			int i;
+			for(i=0;solver_type_table[i];i++)
+			{
+				if(strcmp(solver_type_table[i],cmd)==0)
+				{
+					param.solver_type=i;
+					break;
+				}
+			}
+			if(solver_type_table[i] == NULL)
+			{
+				fprintf(stderr,"unknown solver type.\n");
+				EXIT_LOAD_MODEL()
+			}
+		}
+		else if(strcmp(cmd,"nr_class")==0)
+		{
+			sscanf(model_data,"%d%n",&nr_class,&bytes_read);
+			model_data += bytes_read;
+			model_->nr_class=nr_class;
+		}
+		else if(strcmp(cmd,"nr_feature")==0)
+		{
+			sscanf(model_data,"%d%n",&nr_feature,&bytes_read);
+			model_data += bytes_read;
+			model_->nr_feature=nr_feature;
+		}
+		else if(strcmp(cmd,"bias")==0)
+		{
+			sscanf(model_data,"%lf%n",&bias,&bytes_read);
+			model_data += bytes_read;
+			model_->bias=bias;
+		}
+		else if(strcmp(cmd,"w")==0)
+		{
+			break;
+		}
+		else if(strcmp(cmd,"label")==0)
+		{
+			int nr_class = model_->nr_class;
+			model_->label = Malloc(int,nr_class);
+			for(int i=0;i<nr_class;i++) {
+				sscanf(model_data,"%d%n",&model_->label[i],&bytes_read);
+				model_data += bytes_read;
+			}
+		}
+		else
+		{
+			fprintf(stderr,"unknown text in model file: [%s]\n",cmd);
+			EXIT_LOAD_MODEL()
+		}
+	}
+
+	nr_feature=model_->nr_feature;
+	if(model_->bias>=0)
+		n=nr_feature+1;
+	else
+		n=nr_feature;
+	int w_size = n;
+	int nr_w;
+	if(nr_class==2 && param.solver_type != MCSVM_CS)
+		nr_w = 1;
+	else
+		nr_w = nr_class;
+
+	model_->w=Malloc(double, w_size*nr_w);
+	for(i=0; i<w_size; i++)
+	{
+		int j;
+		for(j=0; j<nr_w; j++) {
+			sscanf(model_data, "%lf %n", &model_->w[i*nr_w+j],&bytes_read);
+			model_data += bytes_read;
+		}
+	}
+
+	setlocale(LC_ALL, old_locale);
+	free(old_locale);
+	return model_;
+}
+
 int get_nr_feature(const model *model_)
 {
 	return model_->nr_feature;

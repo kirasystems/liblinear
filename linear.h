@@ -59,6 +59,7 @@ double predict_probability(const struct model *model_, const struct feature_node
 
 int save_model(const char *model_file_name, const struct model *model_);
 struct model *load_model(const char *model_file_name);
+struct model *load_model_string(const char *model_data);
 
 int get_nr_feature(const struct model *model_);
 int get_nr_class(const struct model *model_);
