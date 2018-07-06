@@ -35,11 +35,11 @@ blas/blas.a: blas/*.c blas/*.h
 
 install:
 	if [ "$(OS)" = "Darwin" ]; then \
-		LIBFILE="liblinear.dylib"; \
+		cp liblinear.dylib /usr/local/lib; \
 	else \
-		LIBFILE="liblinear.so.$(SHVER)"; \
-	fi; \
-	cp $${LIBFILE} /usr/local/lib
+		cp liblinear.so.$(SHVER) /usr/local/lib; \
+		ln -s /usr/local/lib/liblinear.so.$(SHVER) /usr/local/lib/liblinear.so; \
+	fi;
 	cp predict /usr/local/bin
 	cp train /usr/local/bin
 	cp linear.h /usr/local/include
